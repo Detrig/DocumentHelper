@@ -10,10 +10,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.isVisible
+import androidx.recyclerview.widget.GridLayoutManager
 import com.example.documenthelper.core.AbstractFragment
 import com.example.documenthelper.core.ProvideViewModel
 import com.example.documenthelper.databinding.FragmentDocumentsBinding
 import com.example.documenthelper.documents.data.room.DocumentEntity
+import com.example.documenthelper.documents.domain.utils.DocxParser
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import java.io.InputStream
 
@@ -21,6 +24,7 @@ class DocumentsFragment : AbstractFragment<FragmentDocumentsBinding>() {
 
     private lateinit var viewModel : DocumentsViewModel
     private lateinit var adapter : DocumentAdapter
+    private lateinit var docxParser: DocxParser
 
     // Регистрируем контракт для выбора файла
     private val filePickerLauncher = registerForActivityResult(
@@ -28,7 +32,14 @@ class DocumentsFragment : AbstractFragment<FragmentDocumentsBinding>() {
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.data?.let { uri ->
-                parseDocxFile(uri)
+                requireContext().contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                viewModel.saveDocUri(uri.toString())
+                docxParser.parseDocxFile(uri)?.let {
+                    viewModel.saveDocEntity(it)
+                }
             }
         }
     }
@@ -42,18 +53,34 @@ class DocumentsFragment : AbstractFragment<FragmentDocumentsBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        binding.docsRcView.layoutManager = GridLayoutManager(requireContext(), 2)
+
         viewModel = (activity as ProvideViewModel).viewModel(DocumentsViewModel::class.java)
+        docxParser = DocxParser(requireContext())
+
+        initRcView()
+        viewModel.loadDocuments()
+
         binding.addDocument.setOnClickListener {
             openFilePicker()
         }
+        binding.addDocumentMainButton.setOnClickListener {
+            openFilePicker()
+        }
+
+        viewModel.documentLiveData().observe(viewLifecycleOwner) {
+            render(it)
+        }
+
     }
 
     private fun initRcView() {
         adapter = DocumentAdapter(object : DocumentAdapter.OnDocumentClickLisnter {
             override fun onClick(document: DocumentEntity) {
-                TODO("Not yet implemented")
+                viewModel.fillDocumentScreen(document)
             }
         })
+        binding.docsRcView.adapter = adapter
     }
 
     private fun openFilePicker() {
@@ -64,48 +91,36 @@ class DocumentsFragment : AbstractFragment<FragmentDocumentsBinding>() {
         filePickerLauncher.launch(intent)
     }
 
-    private fun parseDocxFile(uri: Uri) {
-        try {
-            requireContext().contentResolver.openInputStream(uri)?.use { inputStream ->
-                val placeholders = parseDocxAndFindPlaceholders(inputStream)
-                val documentEntity = DocumentEntity(name = "document.docx", placeholders = placeholders, uriString = uri.toString())
-                viewModel.insertDocument(documentEntity)
-                Log.d("Document", placeholders.toString())
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(requireContext(), "Ошибка при чтении файла", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun parseDocxAndFindPlaceholders(inputStream: InputStream): List<String> {
-        val placeholders = mutableListOf<String>()
-        val document = XWPFDocument(inputStream)
-
-        document.paragraphs.forEach { paragraph ->
-            Regex("\\{(.*?)\\}").findAll(paragraph.text).forEach { match ->
-                placeholders.add(match.value)
-            }
-        }
-
-        document.tables?.forEach { table ->
-            table.rows.forEach { row ->
-                row.tableCells.forEach { cell ->
-                    cell.paragraphs.forEach { paragraph ->
-                        Regex("\\{(.*?)\\}").findAll(paragraph.text).forEach { match ->
-                            placeholders.add(match.value)
-                        }
-                    }
-                }
-            }
-        }
-
-        return placeholders.distinct()
-    }
 
 //    private fun showPlaceholders(placeholders: List<String>) {
 //        view?.findViewById<TextView>(R.id.tv_placeholders)?.text =
 //            if (placeholders.isEmpty()) "Плейсхолдеры не найдены"
 //            else placeholders.joinToString("\n")
 //    }
+
+    private fun render(state: DocumentsUiState) {
+        when (state) {
+            is DocumentsUiState.Loading -> showOnly(binding.progressBar)
+            is DocumentsUiState.Error -> {
+                showOnly(binding.docsRcView, binding.addDocument, binding.addDocumentMainButton)
+                Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+            }
+            is DocumentsUiState.Success ->  {
+                showOnly(binding.docsRcView, binding.addDocument)
+                Log.d("DH-01", "Success:  ${state.documentList}")
+                adapter.update(ArrayList(state.documentList))
+            }
+            is DocumentsUiState.EmptyDocumentList -> showOnly(binding.docsRcView, binding.addDocument, binding.addDocumentMainButton)
+        }
+    }
+
+    private fun showOnly(vararg viewsToShow: View) {
+        val allViews = listOf(
+            binding.progressBar,
+            binding.docsRcView,
+            binding.addDocumentMainButton,
+            binding.addDocument,
+        )
+        allViews.forEach { it.isVisible = it in viewsToShow }
+    }
 }

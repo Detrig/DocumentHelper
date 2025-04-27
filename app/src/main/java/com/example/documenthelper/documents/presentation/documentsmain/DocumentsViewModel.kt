@@ -5,38 +5,64 @@ import androidx.lifecycle.ViewModel
 import com.example.documenthelper.core.Navigation
 import com.example.documenthelper.documents.data.room.DocumentDao
 import com.example.documenthelper.documents.data.room.DocumentEntity
+import com.example.documenthelper.documents.domain.usecase.GetAllDocumentsUseCase
+import com.example.documenthelper.documents.domain.usecase.SaveDocumentEntityUseCase
+import com.example.documenthelper.documents.domain.usecase.SaveOpenedDocumentPathUseCase
+import com.example.documenthelper.documents.domain.utils.uistate.DocumentsUiStateLiveDataWrapper
 import com.example.documenthelper.documents.presentation.filldocument.CurrentDocumentLiveDataWrapper
 import com.example.documenthelper.documents.presentation.filldocument.FillDocumentScreen
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DocumentsViewModel(
     private val navigation: Navigation,
-    private val currentDocumentLiveDataWrapper: CurrentDocumentLiveDataWrapper,
-    private val documentDao: DocumentDao,
-    private val viewModelScope : CoroutineScope,
-    private val dispatcherIO : CoroutineDispatcher = Dispatchers.IO
+    private val documentsUiStateLiveDataWrapper: DocumentsUiStateLiveDataWrapper,
+    private val clickedDocumentLiveDataWrapper: CurrentDocumentLiveDataWrapper,
+    private val getAllDocumentsUseCase: GetAllDocumentsUseCase,
+    private val saveOpenedDocumentPathUseCase: SaveOpenedDocumentPathUseCase,
+    private val saveDocumentEntityUseCase: SaveDocumentEntityUseCase,
+    private val viewModelScope: CoroutineScope,
+    private val dispatcherMain: CoroutineDispatcher = Dispatchers.Main,
+    private val dispatcherIO: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
-    fun fillDocumentScreen(templatePath: String, placeholders: List<String>) {
-//        currentDocumentLiveDataWrapper.update(
-//            Document(templatePath, placeholders)
-//        )
-        Log.d("Document", "path: $templatePath placeHolder: ${placeholders.toString()}")
+    fun fillDocumentScreen(document: DocumentEntity) {
+        clickedDocumentLiveDataWrapper.update(document)
         navigation.update(FillDocumentScreen)
     }
 
-    fun currentDocLiveData() = currentDocumentLiveDataWrapper.liveData()
+    fun loadDocuments() {
+        viewModelScope.launch(dispatcherIO) {
+            withContext(dispatcherMain) {
+                documentsUiStateLiveDataWrapper.update(DocumentsUiState.Loading)
+            }
 
-    fun updateDocLiveData(value : DocumentEntity) {
-        currentDocumentLiveDataWrapper.update(value)
+            val documentList = getAllDocumentsUseCase.invoke()
+            Log.d("DH-01", "documents: $documentList")
+            withContext(dispatcherMain) {
+                if (documentList.isNotEmpty()) {
+                    documentsUiStateLiveDataWrapper.update(DocumentsUiState.Success(documentList))
+                } else {
+                    documentsUiStateLiveDataWrapper.update(DocumentsUiState.EmptyDocumentList)
+                }
+            }
+        }
     }
 
-    fun insertDocument(document: DocumentEntity) {
+    fun documentLiveData() = documentsUiStateLiveDataWrapper.liveData()
+
+    fun saveDocUri(uri: String) {
+        Log.d("DH-Uri", "Uri saved: $uri")
+        saveOpenedDocumentPathUseCase.invoke(uri)
+    }
+
+    fun saveDocEntity(documentEntity: DocumentEntity) {
         viewModelScope.launch(dispatcherIO) {
-            documentDao.insert(document)
+            saveDocumentEntityUseCase.invoke(documentEntity)
+            loadDocuments()
         }
     }
 }

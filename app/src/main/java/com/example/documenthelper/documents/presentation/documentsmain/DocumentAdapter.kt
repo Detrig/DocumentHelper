@@ -1,5 +1,6 @@
 package com.example.documenthelper.documents.presentation.documentsmain
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,7 +18,7 @@ class DocumentAdapter(private val listener : OnDocumentClickLisnter) : RecyclerV
         private val binding = DocumentRcViewItemBinding.bind(view)
 
         fun bind(document: DocumentEntity, listener : OnDocumentClickLisnter) = with(binding) {
-
+            Log.d("DH-02", "binding document: ${document.name}")
             documentNameTV.text = document.name
 
             itemView.setOnClickListener {
@@ -27,6 +28,7 @@ class DocumentAdapter(private val listener : OnDocumentClickLisnter) : RecyclerV
     }
 
     fun update(newList : ArrayList<DocumentEntity>) {
+        Log.d("DH-02", "newList: $newList")
         val diffUtil = DiffUtilCallBack(list, newList)
         val diff = DiffUtil.calculateDiff(diffUtil)
 
@@ -58,8 +60,7 @@ class DocumentAdapter(private val listener : OnDocumentClickLisnter) : RecyclerV
             val oldItem = old[oldItemPosition]
             val newItem = new[newItemPosition]
 
-            return oldItem == newItem
-
+            return oldItem.id == newItem.id
         }
 
         override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {

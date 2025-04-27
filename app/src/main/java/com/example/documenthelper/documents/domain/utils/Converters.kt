@@ -1,4 +1,4 @@
-package com.example.documenthelper.documents.domain
+package com.example.documenthelper.documents.domain.utils
 
 import androidx.room.TypeConverter
 

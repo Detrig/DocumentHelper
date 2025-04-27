@@ -7,6 +7,10 @@ import com.example.documenthelper.documents.data.room.DocumentDao
 import com.example.documenthelper.documents.data.sharedprefs.SharedPrefsLastOpenedDocumentDataSource
 import com.example.documenthelper.documents.domain.DocumentRepository
 import com.example.documenthelper.documents.domain.LastOpenedDocumentDataSource
+import com.example.documenthelper.documents.domain.usecase.GetAllDocumentsUseCase
+import com.example.documenthelper.documents.domain.usecase.SaveDocumentEntityUseCase
+import com.example.documenthelper.documents.domain.usecase.SaveOpenedDocumentPathUseCase
+import com.example.documenthelper.documents.domain.utils.uistate.DocumentsUiStateLiveDataWrapper
 import com.example.documenthelper.documents.presentation.documentsmain.DocumentsViewModel
 import com.example.documenthelper.documents.presentation.filldocument.CurrentDocumentLiveDataWrapper
 import com.example.documenthelper.documents.presentation.filldocument.FillDocumentViewModel
@@ -29,15 +33,23 @@ interface ProvideViewModel {
 
         private val currentDocumentLiveDataWrapper = CurrentDocumentLiveDataWrapper.Base()
 
+        private val documentsUiStateLiveDataWrapper = DocumentsUiStateLiveDataWrapper.Base()
         private val documentRepository = DocumentRepositoryImpl(documentDao, lastOpenedDocumentDataSource)
+
+        private val getAllDocumentsUseCase = GetAllDocumentsUseCase(documentRepository)
+        private val saveOpenedDocumentPathUseCase = SaveOpenedDocumentPathUseCase(documentRepository)
+        private val saveDocumentEntityUseCase = SaveDocumentEntityUseCase(documentRepository)
 
         override fun <T : ViewModel> viewModel(viewModelClass: Class<T>): T {
             return when (viewModelClass) {
                 MainViewModel::class.java -> MainViewModel(navigation)
                 DocumentsViewModel::class.java -> DocumentsViewModel(
                     navigation,
+                    documentsUiStateLiveDataWrapper,
                     currentDocumentLiveDataWrapper,
-                    App.database.documentDao(),
+                    getAllDocumentsUseCase,
+                    saveOpenedDocumentPathUseCase,
+                    saveDocumentEntityUseCase,
                     viewModelScope
                 )
 
