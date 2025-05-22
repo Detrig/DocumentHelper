@@ -4,6 +4,8 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     xmlns:tools="http://schemas.android.com/tools"
+    android:clickable="true"
+    android:focusable="true"
     android:layout_margin="8dp">
 
     <TextView
@@ -11,12 +13,13 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
+        android:minLines="2"
         android:maxLines="2"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="@+id/documentImage"
         app:layout_constraintStart_toStartOf="@+id/documentImage"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="Согласие на обработку персональных данных" />
+        tools:text="Согласие на обрах" />
 
     <ImageView
         android:id="@+id/documentImage"
