@@ -27,7 +27,10 @@ class DocumentPreviewViewModel(
 ) : ViewModel() {
 
     fun getFilledValues() = filledValuesLiveDataWrapper.liveData().value ?: mapOf()
-    fun getAttachments() = attachmentsLiveDataWrapper.liveData().value ?: emptyList()
+    fun getAttachments() : List<Pair<String,String>> {
+        Log.d("alz-04", "getting attachments: ${attachmentsLiveDataWrapper.liveData().value}")
+        return attachmentsLiveDataWrapper.liveData().value ?: emptyList()
+    }
 
     fun getClickedDocument() = clickedDocumentLiveDataWrapper.liveData().value
 
@@ -45,7 +48,7 @@ class DocumentPreviewViewModel(
 
         context.contentResolver.openInputStream(documentEntity.uriString.toUri())?.use { inputStream ->
 
-            DocumentFiller.fillDocument(inputStream, fieldValue).use { filledDocument ->
+            DocumentFiller.fillDocument(inputStream, fieldValue, getAttachments()).use { filledDocument ->
                 FileOutputStream(outputFile).use { outStream ->
                     filledDocument.write(outStream)
                 }

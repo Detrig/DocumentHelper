@@ -100,7 +100,7 @@ class FillDocumentFragment : AbstractFragment<FragmentFillDocumentBinding>() {
                 binding.placeHolderDoesntExistTV.visibility = View.VISIBLE
                 binding.titleText.visibility = View.INVISIBLE
                 binding.generateButton.visibility = View.INVISIBLE
-                //binding.addAttachmentButton.visibility = View.INVISIBLE
+                binding.addAttachmentButton.visibility = View.INVISIBLE
             }
         }
     }
@@ -120,7 +120,7 @@ class FillDocumentFragment : AbstractFragment<FragmentFillDocumentBinding>() {
             val fieldValues = collectFieldValues()
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    val outputFile = viewModel.generateFilledDocument(requireContext(), fieldValues)
+                    val outputFile = viewModel.generateFilledDocument(requireContext(), fieldValues, attachments)
                     withContext(Dispatchers.Main) {
                         showResult(outputFile)
                         Toast.makeText(requireContext(), "Файл успешно создан", Toast.LENGTH_SHORT).show()
@@ -176,6 +176,17 @@ class FillDocumentFragment : AbstractFragment<FragmentFillDocumentBinding>() {
             gravity = Gravity.TOP or Gravity.START
         }
 
+        val index = attachments.size
+        attachments.add(Pair("", "")) // добавляем заранее, знаем индекс
+
+        titleEditText.doAfterTextChanged { text ->
+            attachments[index] = Pair(text.toString(), contentEditText.text.toString())
+        }
+
+        contentEditText.doAfterTextChanged { text ->
+            attachments[index] = Pair(titleEditText.text.toString(), text.toString())
+        }
+
         val removeButton = Button(context).apply {
             text = "Удалить приложение"
             layoutParams = LinearLayout.LayoutParams(
@@ -186,37 +197,20 @@ class FillDocumentFragment : AbstractFragment<FragmentFillDocumentBinding>() {
             }
             setOnClickListener {
                 binding.fieldsContainer.removeView(attachmentContainer)
-                attachments.removeIf { it.first == titleEditText.text.toString() }
+                attachments.removeAt(index)
             }
         }
 
         attachmentContainer.addView(titleEditText)
         attachmentContainer.addView(contentEditText)
         attachmentContainer.addView(removeButton)
-
         binding.fieldsContainer.addView(attachmentContainer)
-
-        attachments.add(Pair("", ""))
-
-
-        titleEditText.doAfterTextChanged { text ->
-            val index = binding.fieldsContainer.indexOfChild(attachmentContainer)
-            if (index >= 0 && index < attachments.size) {
-                attachments[index] = Pair(text.toString(), contentEditText.text.toString())
-            }
-        }
-
-        contentEditText.doAfterTextChanged { text ->
-            val index = binding.fieldsContainer.indexOfChild(attachmentContainer)
-            if (index >= 0 && index < attachments.size) {
-                attachments[index] = Pair(titleEditText.text.toString(), text.toString())
-            }
-        }
 
         binding.scrollView.post {
             binding.scrollView.smoothScrollTo(0, attachmentContainer.bottom)
         }
     }
+
 
     private fun Int.dpToPx(): Int = (this * resources.displayMetrics.density).toInt()
 

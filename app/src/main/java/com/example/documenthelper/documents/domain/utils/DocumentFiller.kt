@@ -1,13 +1,19 @@
 package com.example.documenthelper.documents.domain.utils
 
 import android.util.Log
+import org.apache.poi.xwpf.usermodel.BreakType
+import org.apache.poi.xwpf.usermodel.ParagraphAlignment
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import java.io.FileOutputStream
 import java.io.InputStream
 
 object DocumentFiller {
 
-    fun fillDocument(inputStream: InputStream, fieldValues: Map<String, String>): XWPFDocument {
+    fun fillDocument(
+        inputStream: InputStream,
+        fieldValues: Map<String, String>,
+        attachments: List<Pair<String, String>>
+    ): XWPFDocument {
         val document = XWPFDocument(inputStream)
         var fullText = StringBuilder()
 
@@ -27,26 +33,26 @@ object DocumentFiller {
                 }
             }
             if (paragraphText.isNotEmpty()) {
-                // Удаляем все runs из параграфа
                 while (paragraph.runs.isNotEmpty()) {
-                    paragraph.removeRun(0)  // Удаляем первый run
+                    paragraph.removeRun(0)
                 }
                 val run = paragraph.createRun()
-                run.setText(paragraphText)  // Добавляем новый текст
-                fullText.append(paragraphText).append(" ")  // Объединяем текст в одну строку с пробелом
+                run.setText(paragraphText)
+                fullText.append(paragraphText)
+                    .append(" ")
             }
         }
 
-        // Извлекаем текст из таблиц
+        // Из таблиц
         document.tables.forEach { table ->
             table.rows.forEach { row ->
                 row.tableCells.forEach { cell ->
                     var cellText = cell.text
-                   // Log.d("DocumentFiller", "Original cell text: $cellText")
+                    // Log.d("DocumentFiller", "Original cell text: $cellText")
 
                     fieldValues.forEach { (placeholder, value) ->
                         if (cellText.contains(placeholder)) {
-                           // Log.d("DocumentFiller", "Found placeholder: $placeholder. Replacing with: $value")
+                            // Log.d("DocumentFiller", "Found placeholder: $placeholder. Replacing with: $value")
                             cellText = cellText.replace(placeholder, value)
                         }
                     }
@@ -59,16 +65,71 @@ object DocumentFiller {
                         cellParagraph.removeRun(0) // Удаляем все старые runs
                     }
                     val run = cellParagraph.createRun()
-                    run.setText(cellText)  // Устанавливаем новый текст
-                    fullText.append(cellText).append(" ")  // Добавляем текст ячейки в общий текст
+                    run.setText(cellText)
+                    fullText.append(cellText).append(" ")
                 }
             }
         }
 
-        // Логируем полный текст
-        Log.d("alz-04", "Full Text after processing: $fullText")
+
+        //Список приложений
+        if (attachments.isNotEmpty()) {
+            document.createParagraph().apply {
+                spacingBefore = 200
+                spacingAfter = 100
+                alignment = ParagraphAlignment.LEFT
+                createRun().apply {
+                    isBold = true
+                    fontSize = 14
+                    setText("Приложения:")
+                }
+            }
+
+            attachments.forEachIndexed { index, (title, _) ->
+                document.createParagraph().apply {
+                    alignment = ParagraphAlignment.LEFT
+                    createRun().apply {
+                        fontSize = 12
+                        setText("${index + 1}. $title")
+                    }
+                }
+            }
+        }
+
+
+        attachments.forEachIndexed { index, (title, content) ->
+            document.createParagraph().createRun().addBreak(BreakType.PAGE)
+
+            document.createParagraph().apply {
+                alignment = ParagraphAlignment.LEFT
+                createRun().apply {
+                    isBold = true
+                    fontSize = 14
+                    setText("Приложение ${index + 1}")
+                }
+            }
+
+            document.createParagraph().apply {
+                alignment = ParagraphAlignment.CENTER
+                createRun().apply {
+                    isBold = true
+                    fontSize = 16
+                    setText(title)
+                }
+            }
+
+            document.createParagraph().apply {
+                alignment = ParagraphAlignment.BOTH
+                spacingBetween = 1.5
+                createRun().apply {
+                    fontSize = 12
+                    setText(content)
+                }
+            }
+        }
 
 
         return document
     }
+
 }

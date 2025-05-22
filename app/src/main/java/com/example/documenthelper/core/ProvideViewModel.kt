@@ -61,15 +61,15 @@ interface ProvideViewModel {
                 FillDocumentViewModel::class.java -> FillDocumentViewModel(
                     navigation,
                     currentDocumentLiveDataWrapper,
-                    attachmentsLiveDataWrapper,
-                    filledValuesLiveDataWrapper
+                    filledValuesLiveDataWrapper,
+                    attachmentsLiveDataWrapper
                 )
 
                 DocumentPreviewViewModel::class.java -> DocumentPreviewViewModel(
                     navigation,
                     currentDocumentLiveDataWrapper,
-                    attachmentsLiveDataWrapper,
-                    filledValuesLiveDataWrapper
+                    filledValuesLiveDataWrapper,
+                    attachmentsLiveDataWrapper
                 )
 
                 else -> throw IllegalStateException("unknown viewModelClass $viewModelClass")

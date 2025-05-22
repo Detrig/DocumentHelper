@@ -70,6 +70,7 @@ class DocumentPreviewFragment : AbstractFragment<FragmentDocumentPreviewBinding>
 
     private fun initViews(docxParser: DocxParser){
         val document = viewModel.getClickedDocument()
+        val attachments = viewModel.getAttachments()
         document?.let {
             val uri = requireContext().contentResolver.openInputStream(document.uriString.toUri())
                 ?: throw IOException("Не удалось открыть файл")
@@ -85,6 +86,7 @@ class DocumentPreviewFragment : AbstractFragment<FragmentDocumentPreviewBinding>
 
         binding.saveButton.setOnClickListener {
             val fieldValues = viewModel.getFilledValues()
+            val attachments = viewModel.getAttachments()
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val outputFile = viewModel.generateFilledDocument(requireContext(), fieldValues)

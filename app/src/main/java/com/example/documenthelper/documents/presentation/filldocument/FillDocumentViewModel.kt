@@ -33,7 +33,7 @@ class FillDocumentViewModel(
     private val attachmentsLiveDataWrapper: AttachmentsLiveDataWrapper
 ) : ViewModel() {
 
-    fun getPlaceHolders() : DocumentFillUiState {
+    fun getPlaceHolders(): DocumentFillUiState {
         clickedDocumentLiveDataWrapper.liveData().value?.let {
             if (it.placeholders.isNotEmpty()) {
                 return DocumentFillUiState.PlaceHoldersExist(it)
@@ -44,7 +44,11 @@ class FillDocumentViewModel(
         return DocumentFillUiState.Error("Ошибка при получении документа")
     }
 
-    suspend fun generateFilledDocument(context: Context, fieldValue: Map<String,String>): Uri {
+    suspend fun generateFilledDocument(
+        context: Context,
+        fieldValue: Map<String, String>,
+        attachments: List<Pair<String, String>>
+    ): Uri {
         val documentEntity = clickedDocumentLiveDataWrapper.liveData().value
             ?: throw IllegalStateException("Документ не выбран")
 
@@ -56,14 +60,15 @@ class FillDocumentViewModel(
         }
         Log.d("alz-04", "filled_${documentEntity.name}")
 
-        context.contentResolver.openInputStream(documentEntity.uriString.toUri())?.use { inputStream ->
+        context.contentResolver.openInputStream(documentEntity.uriString.toUri())
+            ?.use { inputStream ->
 
-            DocumentFiller.fillDocument(inputStream, fieldValue).use { filledDocument ->
-                FileOutputStream(outputFile).use { outStream ->
-                    filledDocument.write(outStream)
+                DocumentFiller.fillDocument(inputStream, fieldValue, attachments).use { filledDocument ->
+                    FileOutputStream(outputFile).use { outStream ->
+                        filledDocument.write(outStream)
+                    }
                 }
-            }
-        } ?: throw IOException("Не удалось открыть исходный файл")
+            } ?: throw IOException("Не удалось открыть исходный файл")
 
         return FileProvider.getUriForFile(
             context,
