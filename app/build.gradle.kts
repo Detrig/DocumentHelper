@@ -66,15 +66,18 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
 
+
     implementation("org.apache.poi:poi:5.2.5")
     implementation("org.apache.poi:poi-ooxml:5.2.5")
+    implementation("org.apache.xmlbeans:xmlbeans:5.1.1") // требуется для docx
+    implementation("org.apache.commons:commons-compress:1.25.0")
 
-    // Для работы с XML (нужно для POI)
+    // Для работы с XML
     implementation("org.apache.xmlbeans:xmlbeans:5.1.1")
-    implementation("com.fasterxml.woodstox:woodstox-core:6.5.0") // Исключает конфликты StAX
-    implementation("org.apache.commons:commons-compress:1.25.0") // Для работы с ZIP (DOCX - это ZIP-архив)
+    implementation("com.fasterxml.woodstox:woodstox-core:6.5.0")
+    implementation("org.apache.commons:commons-compress:1.25.0")
 
-    // Доп. зависимости для Android
+    // Для работы с IO
     implementation("commons-io:commons-io:2.15.1")
 
 // Room Database

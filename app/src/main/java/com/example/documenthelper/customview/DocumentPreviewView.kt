@@ -7,6 +7,7 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.BackgroundColorSpan
 import android.util.AttributeSet
+import android.util.Log
 import android.widget.ScrollView
 import android.widget.TextView
 
@@ -42,6 +43,7 @@ class DocumentPreviewView : ScrollView, UpdateDocumentPreviewView {
         filledValues: HashMap<String, String>,
         highlight: Boolean
     ) {
+        //Log.d("alz-04", "CustomView\nfilledValues: $filledValues, \ntemplate: $template")
         updatePreview(template, filledValues, highlight)
     }
 
@@ -59,9 +61,9 @@ class DocumentPreviewView : ScrollView, UpdateDocumentPreviewView {
         var offset = 0
 
         for (match in matches) {
-            val key = match.groupValues[1]
-            val value = filledValues[key] ?: continue
-
+//            val key = match.groupValues[1]
+            val value = filledValues[match.value] ?: match.value
+            Log.d("alz-04", "value: $value")
             val start = match.range.first + offset
             val end = match.range.last + 1 + offset
 
@@ -98,7 +100,6 @@ class DocumentPreviewView : ScrollView, UpdateDocumentPreviewView {
             super.onRestoreInstanceState(state)
         }
     }
-
 }
 
 interface UpdateDocumentPreviewView {

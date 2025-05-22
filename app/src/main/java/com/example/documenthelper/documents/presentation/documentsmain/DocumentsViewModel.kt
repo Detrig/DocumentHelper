@@ -3,12 +3,11 @@ package com.example.documenthelper.documents.presentation.documentsmain
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.documenthelper.core.Navigation
-import com.example.documenthelper.documents.data.room.DocumentDao
 import com.example.documenthelper.documents.data.room.DocumentEntity
 import com.example.documenthelper.documents.domain.usecase.GetAllDocumentsUseCase
 import com.example.documenthelper.documents.domain.usecase.SaveDocumentEntityUseCase
 import com.example.documenthelper.documents.domain.usecase.SaveOpenedDocumentPathUseCase
-import com.example.documenthelper.documents.domain.utils.uistate.DocumentsUiStateLiveDataWrapper
+import com.example.documenthelper.documents.domain.utils.livedata.DocumentsUiStateLiveDataWrapper
 import com.example.documenthelper.documents.presentation.filldocument.CurrentDocumentLiveDataWrapper
 import com.example.documenthelper.documents.presentation.filldocument.FillDocumentScreen
 import kotlinx.coroutines.CoroutineDispatcher

@@ -2,47 +2,88 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/scrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/white"
     android:fillViewport="true"
-    android:padding="16dp">
+    android:padding="8dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="80dp">
+        android:orientation="vertical">
 
-        <!-- Заголовок -->
+        <TextView
+            android:id="@+id/placeHolderDoesntExistTV"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="В документе отсутствуют необходимые конструкции, а именно {...}"
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="22sp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <TextView
             android:id="@+id/titleText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center"
             android:text="Заполните поля документа"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp"
-            android:gravity="center"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Контейнер для динамически добавляемых полей -->
-        <LinearLayout
-            android:id="@+id/fieldsContainer"
+        <ScrollView
+            android:id="@+id/fieldsScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fillViewport="true"
+            app:layout_constraintBottom_toTopOf="@+id/addAttachmentButton"
+            app:layout_constraintTop_toBottomOf="@+id/titleText">
+
+            <LinearLayout
+                android:id="@+id/fieldsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
+
+        <Button
+            android:id="@+id/addAttachmentButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"/>
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="0dp"
+            android:backgroundTint="@color/light_gray"
+            android:text="Добавить приложение"
+            app:layout_constraintBottom_toTopOf="@+id/generateButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
-        <!-- Кнопка генерации документа -->
-        <com.google.android.material.button.MaterialButton
+        <Button
             android:id="@+id/generateButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginBottom="2dp"
+            android:backgroundTint="@color/black"
+            android:padding="12dp"
             android:text="Создать документ"
-            android:textAllCaps="false"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp"
-            app:iconTint="@color/white"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+            app:layout_constraintBottom_toTopOf="@+id/previewButton" />
 
-    </LinearLayout>
+
+        <Button
+            android:id="@+id/previewButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/black"
+            android:padding="12dp"
+            android:text="Перейти к предпросмотру"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

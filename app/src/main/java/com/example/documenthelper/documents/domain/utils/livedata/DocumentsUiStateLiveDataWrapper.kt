@@ -1,4 +1,4 @@
-package com.example.documenthelper.documents.domain.utils.uistate
+package com.example.documenthelper.documents.domain.utils.livedata
 
 import com.example.documenthelper.core.LiveDataWrapper
 import com.example.documenthelper.documents.presentation.documentsmain.DocumentsUiState

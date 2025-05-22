@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <external-files-path name="generated_docs" path="generated_docs/" />
-    <cache-path name="cache" path="/" />
+    <!-- Доступ к внутреннему хранилищу -->
+    <files-path name="internal_files" path="." />
+
+    <!-- Доступ к кешу -->
+    <cache-path name="cache" path="." />
+
+    <!-- Доступ к внешнему хранилищу -->
+    <external-files-path name="external_files" path="." />
+
+    <!-- Для Android 10+ рекомендуется использовать -->
+    <external-path name="external_storage_root" path="." />
 </paths>

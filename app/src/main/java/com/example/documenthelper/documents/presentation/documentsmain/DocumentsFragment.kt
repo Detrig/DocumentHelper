@@ -26,7 +26,6 @@ class DocumentsFragment : AbstractFragment<FragmentDocumentsBinding>() {
     private lateinit var adapter : DocumentAdapter
     private lateinit var docxParser: DocxParser
 
-    // Регистрируем контракт для выбора файла
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -71,13 +70,13 @@ class DocumentsFragment : AbstractFragment<FragmentDocumentsBinding>() {
         viewModel.documentLiveData().observe(viewLifecycleOwner) {
             render(it)
         }
-
     }
 
     private fun initRcView() {
         adapter = DocumentAdapter(object : DocumentAdapter.OnDocumentClickLisnter {
             override fun onClick(document: DocumentEntity) {
                 viewModel.fillDocumentScreen(document)
+                //Log.d("alz-04", "clicked document: $document")
             }
         })
         binding.docsRcView.adapter = adapter
@@ -90,7 +89,6 @@ class DocumentsFragment : AbstractFragment<FragmentDocumentsBinding>() {
         }
         filePickerLauncher.launch(intent)
     }
-
 
 //    private fun showPlaceholders(placeholders: List<String>) {
 //        view?.findViewById<TextView>(R.id.tv_placeholders)?.text =

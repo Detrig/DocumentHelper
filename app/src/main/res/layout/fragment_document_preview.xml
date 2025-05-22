@@ -51,10 +51,11 @@
 
             <ImageButton
                 android:id="@+id/saveButton"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
                 android:layout_gravity="center"
-                android:src="@drawable/diskette" />
+                android:src="@drawable/ic_download"
+                android:backgroundTint="@android:color/transparent"/>
         </LinearLayout>
 
     </LinearLayout>

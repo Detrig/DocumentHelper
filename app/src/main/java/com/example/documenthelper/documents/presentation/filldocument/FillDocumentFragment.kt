@@ -1,19 +1,41 @@
 package com.example.documenthelper.documents.presentation.filldocument
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.InputType
+import android.text.TextWatcher
+import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.Toast
+import androidx.appcompat.widget.AppCompatEditText
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
+import com.example.documenthelper.R
 import com.example.documenthelper.core.AbstractFragment
 import com.example.documenthelper.core.ProvideViewModel
 import com.example.documenthelper.databinding.FragmentFillDocumentBinding
+import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 
 class FillDocumentFragment : AbstractFragment<FragmentFillDocumentBinding>() {
 
     private lateinit var viewModel: FillDocumentViewModel
-    private val fieldValues = mutableMapOf<String, String>()
+    private val inputFields = mutableListOf<AppCompatEditText>()
+    private val attachments = mutableListOf<Pair<String, String>>()
 
     override fun bind(
         inflater: LayoutInflater,
@@ -26,135 +48,188 @@ class FillDocumentFragment : AbstractFragment<FragmentFillDocumentBinding>() {
 
         viewModel = (activity as ProvideViewModel).viewModel(FillDocumentViewModel::class.java)
 
-//        setupObservers()
-//        setupGenerateButton()
+        val uiState = viewModel.getPlaceHolders()
+        render(uiState)
 
-        binding.generateButton.setOnClickListener {
-            lifecycleScope.launch {
-                //val result = viewModel.generateDocument(collectFieldValues())
-                //showResult(result)
+        setupGenerateButton()
+        setupPreviewButton()
+
+        binding.addAttachmentButton.setOnClickListener {
+            addAttachmentFields()
+        }
+    }
+
+    private fun createInputFields(placeholders: List<String>) {
+        binding.fieldsContainer.removeAllViews()
+
+        placeholders.forEach { placeholder ->
+            val inputLayout = TextInputLayout(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, 16.dpToPx(), 0, 0)
+                }
+                hint = placeholder.replace("_", " ").replaceFirstChar { it.uppercase() }
+            }
+
+            val editText = AppCompatEditText(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                setTag(placeholder)
+            }
+
+            inputLayout.addView(editText)
+            binding.fieldsContainer.addView(inputLayout)
+
+            inputFields.add(editText)
+        }
+    }
+
+    private fun render(state: DocumentFillUiState) {
+        when(state) {
+            is DocumentFillUiState.Error -> {
+                Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+            }
+            is DocumentFillUiState.PlaceHoldersExist -> {
+                createInputFields(state.document.placeholders)
+            }
+            is DocumentFillUiState.PlaceHoldersDoesntExist -> {
+                binding.placeHolderDoesntExistTV.visibility = View.VISIBLE
+                binding.titleText.visibility = View.INVISIBLE
+                binding.generateButton.visibility = View.INVISIBLE
+                //binding.addAttachmentButton.visibility = View.INVISIBLE
             }
         }
     }
 
-//    private fun setupObservers() {
-//        viewModel.currentDocLiveData().observe(viewLifecycleOwner) { documentData ->
-//            documentData?.let { data ->
-//                if (data.tempFile.isNotEmpty() && data.placeholders.isNotEmpty()) {
-//                    createInputFields(data.placeholders)
-//                } else {
-//                    showErrorAndExit("Данные документа не загружены")
-//                }
-//            } ?: showErrorAndExit("Документ не выбран")
-//        }
-//    }
-//
-//    private fun createInputFields(placeholders: List<String>) {
-//        binding.fieldsContainer.removeAllViews()
-//
-//        placeholders.forEach { placeholder ->
-//            val inputLayout = TextInputLayout(requireContext()).apply {
-//                layoutParams = LinearLayout.LayoutParams(
-//                    LinearLayout.LayoutParams.MATCH_PARENT,
-//                    LinearLayout.LayoutParams.WRAP_CONTENT
-//                ).apply {
-//                    setMargins(0, 16.dpToPx(), 0, 0)
-//                }
-//                hint = placeholder.replace("_", " ").replaceFirstChar { it.uppercase() }
-//            }
-//
-//            val editText = AppCompatEditText(requireContext()).apply {
-//                layoutParams = LinearLayout.LayoutParams(
-//                    LinearLayout.LayoutParams.MATCH_PARENT,
-//                    LinearLayout.LayoutParams.WRAP_CONTENT
-//                )
-//                setTag(placeholder)
-//            }
-//
-//            inputLayout.addView(editText)
-//            binding.fieldsContainer.addView(inputLayout)
-//        }
-//    }
-//
-//    private fun setupGenerateButton() {
-//        binding.generateButton.setOnClickListener {
-//            collectFieldValues()
-//            generateDocument()
-//        }
-//    }
-//
-//    private fun collectFieldValues() {
-//        for (i in 0 until binding.fieldsContainer.childCount) {
-//            val view = binding.fieldsContainer.getChildAt(i)
-//            if (view is TextInputLayout) {
-//                val editText = view.getChildAt(0) as? EditText
-//                editText?.let {
-//                    val placeholder = it.tag as String
-//                    fieldValues[placeholder] = it.text.toString()
-//                }
-//            }
-//        }
-//    }
-//
-//    private fun generateDocument() {
-//        viewModel.currentDocLiveData().value?.let { data ->
-//            if (fieldValues.size == data.placeholders.size) {
-//                lifecycleScope.launch(Dispatchers.IO) {
-//                    try {
-//                        val result = viewModel.generateDocument(fieldValues)
-//                        withContext(Dispatchers.Main) {
-//                            showResult(result)
-//                        }
-//                    } catch (e: Exception) {
-//                        withContext(Dispatchers.Main) {
-//                            showError("Ошибка генерации: ${e.localizedMessage}")
-//                        }
-//                    }
-//                }
-//            } else {
-//                showError("Заполните все поля")
-//            }
-//        }
-//    }
-//
-//    private fun showResult(outputFile: File) {
-//        MaterialAlertDialogBuilder(requireContext())
-//            .setTitle("Документ готов")
-//            .setMessage("Файл сохранен: ${outputFile.name}")
-//            .setPositiveButton("Открыть") { _, _ ->
-//                openDocument(outputFile)
-//            }
-//            .setNegativeButton("Закрыть", null)
-//            .show()
-//    }
-//
-//    private fun openDocument(file: File) {
-//        val uri = FileProvider.getUriForFile(
-//            requireContext(),
-//            "${requireContext().packageName}.provider",
-//            file
-//        )
-//
-//        val intent = Intent(Intent.ACTION_VIEW).apply {
-//            setDataAndType(uri, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-//            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-//        }
-//
-//        try {
-//            startActivity(intent)
-//        } catch (e: ActivityNotFoundException) {
-//            showError("Установите приложение для просмотра DOCX")
-//        }
-//    }
-//
-//    private fun showError(message: String) {
-//        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
-//    }
-//
-//    private fun showErrorAndExit(message: String) {
-//        showError(message)
-//        parentFragmentManager.popBackStack()
-//    }
-//
-//    private fun Int.dpToPx(): Int = (this * resources.displayMetrics.density).toInt()
+    private fun setupPreviewButton() {
+        binding.previewButton.setOnClickListener {
+            val fieldValues = collectFieldValues()
+            Log.d("DH-05", "fieldValues: $fieldValues")
+            viewModel.updateCurrentFileFieldValues(fieldValues)
+            viewModel.updateAttachments(attachments)
+            viewModel.documentPreviewScreen()
+        }
+    }
+
+    private fun setupGenerateButton() {
+        binding.generateButton.setOnClickListener {
+            val fieldValues = collectFieldValues()
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val outputFile = viewModel.generateFilledDocument(requireContext(), fieldValues)
+                    withContext(Dispatchers.Main) {
+                        showResult(outputFile)
+                        Toast.makeText(requireContext(), "Файл успешно создан", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), "Ошибка при создании файла: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun collectFieldValues(): Map<String, String> {
+        val result = mutableMapOf<String, String>()
+        for (editText in inputFields) {
+            val key = editText.tag as String
+            val value = editText.text.toString()
+            result[key] = value
+        }
+        return result
+    }
+
+    private fun addAttachmentFields() {
+        val context = requireContext()
+
+        val attachmentContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 16.dpToPx(), 0, 16.dpToPx())
+            }
+        }
+
+        val titleEditText = EditText(context).apply {
+            hint = "Заголовок приложения"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            background = ContextCompat.getDrawable(context, R.drawable.edit_text_bg)
+        }
+
+        val contentEditText = EditText(context).apply {
+            hint = "Текст приложения"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            background = ContextCompat.getDrawable(context, R.drawable.edit_text_bg)
+            inputType = InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 3
+            gravity = Gravity.TOP or Gravity.START
+        }
+
+        val removeButton = Button(context).apply {
+            text = "Удалить приложение"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.END
+            }
+            setOnClickListener {
+                binding.fieldsContainer.removeView(attachmentContainer)
+                attachments.removeIf { it.first == titleEditText.text.toString() }
+            }
+        }
+
+        attachmentContainer.addView(titleEditText)
+        attachmentContainer.addView(contentEditText)
+        attachmentContainer.addView(removeButton)
+
+        binding.fieldsContainer.addView(attachmentContainer)
+
+        attachments.add(Pair("", ""))
+
+
+        titleEditText.doAfterTextChanged { text ->
+            val index = binding.fieldsContainer.indexOfChild(attachmentContainer)
+            if (index >= 0 && index < attachments.size) {
+                attachments[index] = Pair(text.toString(), contentEditText.text.toString())
+            }
+        }
+
+        contentEditText.doAfterTextChanged { text ->
+            val index = binding.fieldsContainer.indexOfChild(attachmentContainer)
+            if (index >= 0 && index < attachments.size) {
+                attachments[index] = Pair(titleEditText.text.toString(), text.toString())
+            }
+        }
+
+        binding.scrollView.post {
+            binding.scrollView.smoothScrollTo(0, attachmentContainer.bottom)
+        }
+    }
+
+    private fun Int.dpToPx(): Int = (this * resources.displayMetrics.density).toInt()
+
+    private fun showResult(uri: Uri) {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(requireContext(), "Нет приложения для просмотра DOCX", Toast.LENGTH_SHORT).show()
+        }
+    }
 }
